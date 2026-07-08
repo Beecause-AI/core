@@ -1,0 +1,1 @@
+CREATE INDEX "assistants_org_id" ON "assistants" USING btree ("org_id");

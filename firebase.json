@@ -1,0 +1,30 @@
+{
+  "hosting": [
+    {
+      "target": "app",
+      "public": "apps/web/out",
+      "ignore": ["firebase.json", "**/.*"],
+      "cleanUrls": true,
+      "rewrites": [
+        { "source": "/api/**", "run": { "serviceId": "intellilabs-server", "region": "europe-west1" } },
+        { "source": "/auth/**", "run": { "serviceId": "intellilabs-server", "region": "europe-west1" } },
+        { "source": "/p/**", "destination": "/p.html" }
+      ]
+    },
+    {
+      "target": "www",
+      "public": "apps/marketing/out",
+      "ignore": ["firebase.json", "**/.*"],
+      "cleanUrls": true
+    },
+    {
+      "target": "super",
+      "public": "apps/super/out",
+      "ignore": ["firebase.json", "**/.*"],
+      "cleanUrls": true,
+      "rewrites": [
+        { "source": "/api/**", "run": { "serviceId": "intellilabs-server", "region": "europe-west1" } }
+      ]
+    }
+  ]
+}

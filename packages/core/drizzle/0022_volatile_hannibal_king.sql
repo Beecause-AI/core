@@ -1,0 +1,1 @@
+ALTER TABLE "assistants" ADD COLUMN "provider" text;

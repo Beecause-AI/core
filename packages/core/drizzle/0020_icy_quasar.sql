@@ -1,0 +1,1 @@
+ALTER TABLE "agent_runs" ADD COLUMN "depth" integer DEFAULT 0 NOT NULL;

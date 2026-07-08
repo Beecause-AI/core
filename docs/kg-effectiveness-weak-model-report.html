@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Graph Effectiveness — Weak model + incidents</title>
+<style>
+  :root{
+    --bg:#0e0f0c; --panel:#17180f; --panel2:#1e1f14; --edge:#2c2d20;
+    --fg:#ececdf; --muted:#a6a892; --faint:#777864;
+    --accent:#f6b73c; --a:#9a9ba1; --b:#36c28b; --warn:#e8920c; --crit:#ef4d56;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,Inter,Segoe UI,Roboto,sans-serif;padding:40px 20px}
+  .wrap{max-width:1000px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:18px;margin:34px 0 12px;letter-spacing:-.2px}
+  .sub{color:var(--muted);margin:0 0 6px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:16px}
+  .card .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .card .v{font-size:28px;font-weight:700;margin-top:6px;letter-spacing:-.5px}
+  .card .d{color:var(--faint);font-size:12.5px;margin-top:4px}
+  .good{color:var(--b)} .bad{color:var(--crit)} .accent{color:var(--accent)} .warnc{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px}
+  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--edge);vertical-align:top}
+  th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+  .inc{color:var(--accent);font-size:10px;border:1px solid var(--edge);border-radius:999px;padding:1px 6px;margin-left:6px}
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:18px 20px}
+  .panel2{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:14px 16px;margin-top:10px}
+  ul{margin:8px 0 0;padding-left:20px} li{margin:5px 0}
+  .legend{display:flex;gap:18px;color:var(--muted);font-size:13px;margin-top:8px}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:middle}
+  .foot{color:var(--faint);font-size:12.5px;margin-top:28px;border-top:1px solid var(--edge);padding-top:14px}
+  .flip td{padding:10px 9px}
+  .win{color:var(--b)} .lose{color:var(--crit)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Knowledge Graph effectiveness — weak model &amp; incident scenarios</h1>
+  <p class="sub"><strong>Code-only</strong> vs <strong>Code + KG</strong>, same <strong>weak model (Claude Haiku)</strong>, 10 questions (4 structural + <span class="accent">6 incident/RCA</span>). Tracked: accuracy, tool calls, tokens.</p>
+  <p class="sub mono" style="font-size:12.5px;color:var(--faint)">test org · project “aa” · graph of the intellilabs monorepo · 2026-06-14</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="k">Accuracy</div>
+      <div class="v"><span style="color:var(--a)">46</span> → <span class="bad">42</span><span style="font-size:15px;color:var(--faint)"> / 50</span></div>
+      <div class="d">code-only → code+KG — KG <span class="bad">hurt</span> accuracy here</div>
+    </div>
+    <div class="card">
+      <div class="k">Tool calls</div>
+      <div class="v"><span style="color:var(--a)">141</span> → <span class="warnc">128</span></div>
+      <div class="d">only <span class="warnc">−9%</span> (vs −51% with a strong model)</div>
+    </div>
+    <div class="card">
+      <div class="k">Tokens used</div>
+      <div class="v"><span style="color:var(--a)">276k</span> → <span class="warnc">261k</span></div>
+      <div class="d"><span class="warnc">−5%</span> — marginal</div>
+    </div>
+  </div>
+
+  <h2>The headline: the KG’s value is model-dependent</h2>
+  <div class="panel">
+    <table class="flip">
+      <thead><tr><th>Run</th><th>Accuracy (code-only → +KG)</th><th>Tool calls (→ +KG)</th><th>KG effect</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Strong model</strong> <span class="mono" style="color:var(--faint);font-size:12px">(n=6)</span></td>
+            <td>29/30 → <span class="win">30/30</span></td><td>41 → <span class="win">20 (−51%)</span></td>
+            <td class="win">Clear win — same answers, half the work, dodged 1 slip</td></tr>
+        <tr><td><strong>Weak model</strong> <span class="mono" style="color:var(--faint)">(n=10, this run)</span></td>
+            <td>46/50 → <span class="lose">42/50</span></td><td>141 → 128 (−9%)</td>
+            <td class="lose">Wash-to-negative — over-trusted the KG, skipped verification</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:12px 0 0;color:var(--muted)">A strong model uses the KG the right way — <em>orient, then verify</em> — so it reaches the same correct answer with far less code-spelunking. The weak model can’t reliably do that: it either ignores the KG and greps anyway (little speedup) or <em>over-trusts</em> the summary and stops verifying (accuracy loss).</p>
+  </div>
+
+  <h2>Per-question results (weak model)</h2>
+  <table>
+    <thead><tr>
+      <th>Question</th>
+      <th class="num">A tools</th><th class="num">B tools</th>
+      <th class="num">A tok</th><th class="num">B tok</th>
+      <th class="num">Acc A→B</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>1 · Deployable services</td><td class="num">14</td><td class="num good">0</td><td class="num">19.1k</td><td class="num good">13.1k</td><td class="num lose">4 → 2</td></tr>
+      <tr><td>2 · Schema blast radius</td><td class="num">10</td><td class="num">17</td><td class="num">19.2k</td><td class="num">28.2k</td><td class="num win">4 → 5</td></tr>
+      <tr><td>3 · Approval gate</td><td class="num">6</td><td class="num">11</td><td class="num">19.3k</td><td class="num">21.3k</td><td class="num">5 → 5</td></tr>
+      <tr><td>4 · Add model provider</td><td class="num">8</td><td class="num">13</td><td class="num">23.2k</td><td class="num">22.6k</td><td class="num win">4 → 5</td></tr>
+      <tr><td>5 · Assistant intermittently fails <span class="inc">incident</span></td><td class="num">26</td><td class="num good">0</td><td class="num">46.0k</td><td class="num good">13.2k</td><td class="num lose">5 → 1</td></tr>
+      <tr><td>6 · Approvals not in Slack <span class="inc">incident</span></td><td class="num">12</td><td class="num">17</td><td class="num">38.1k</td><td class="num">34.9k</td><td class="num">5 → 5</td></tr>
+      <tr><td>7 · KG build stuck <span class="inc">incident</span></td><td class="num">30</td><td class="num good">19</td><td class="num">38.8k</td><td class="num good">32.2k</td><td class="num">5 → 5</td></tr>
+      <tr><td>8 · Latency / cost spike <span class="inc">incident</span></td><td class="num">14</td><td class="num">15</td><td class="num">29.8k</td><td class="num">31.8k</td><td class="num">5 → 5</td></tr>
+      <tr><td>9 · Super login broken <span class="inc">incident</span></td><td class="num">14</td><td class="num">20</td><td class="num">23.0k</td><td class="num">31.9k</td><td class="num">4 → 4</td></tr>
+      <tr><td>10 · GitHub sync broken <span class="inc">incident</span></td><td class="num">7</td><td class="num">16</td><td class="num">19.9k</td><td class="num">32.2k</td><td class="num">5 → 5</td></tr>
+      <tr style="border-top:2px solid var(--edge)"><td><strong>Total</strong></td>
+        <td class="num"><strong>141</strong></td><td class="num"><strong>128</strong></td>
+        <td class="num"><strong>276k</strong></td><td class="num"><strong>261k</strong></td>
+        <td class="num"><strong>46 → 42</strong></td></tr>
+      <tr><td style="color:var(--muted)">Incident subset (Q5–Q10)</td>
+        <td class="num">103</td><td class="num good">87</td><td class="num">196k</td><td class="num good">176k</td>
+        <td class="num lose">29 → 25</td></tr>
+    </tbody>
+  </table>
+  <div class="legend"><span><span class="dot" style="background:var(--a)"></span>A · Code-only</span><span><span class="dot" style="background:var(--b)"></span>B · Code + KG</span></div>
+
+  <h2>What happened on incidents</h2>
+  <div class="panel">
+    <ul>
+      <li><strong>On incidents the KG cut effort but not reliably (−16% tools, −10% tokens) — and lost accuracy (29 → 25).</strong> The weak model often read the KG <em>and</em> still grepped (Q6/Q9/Q10 used <em>more</em> tools), so the orientation rarely paid off; where it did shortcut, it sometimes shortcut into a wrong answer.</li>
+      <li><span class="bad"><strong>Failure mode — fabrication via shortcut (Q5).</strong></span> Given the KG, the weak model answered the “assistant intermittently fails” incident with <strong>0 code reads</strong> and invented two non-existent paths (<span class="mono">/packages/ai/</span>, <span class="mono">/packages/engine/worker</span>). Code-only scored 5/5 on the same question by actually reading <span class="mono">loop.ts</span>, <span class="mono">breaker.ts</span>, <span class="mono">message_queue</span>, <span class="mono">model_invocations</span>.</li>
+      <li><span class="bad"><strong>Failure mode — confident wrong fact (Q1).</strong></span> With the KG the weak model asserted “web is deployed to Cloudflare Workers” (it’s Firebase Hosting) — a plausible-but-wrong specific it didn’t verify.</li>
+      <li><strong>Where the KG genuinely helped:</strong> structural framing — it filled gaps the raw-code reader missed (Q2 web mirror-types, Q4 bootstrap registration), nudging those 4 → 5.</li>
+      <li><strong>Both missed the real super-login root cause (Q9):</strong> neither named the actual incident — the serving domain missing from Firebase Auth <em>authorized domains</em> — because that fact lives in Firebase config, not the code or the KG. (A telemetry/observability-connector KG layer would close this.)</li>
+    </ul>
+  </div>
+
+  <h2>Takeaways</h2>
+  <div class="panel">
+    <p style="margin:0">The Knowledge Graph is a <strong>force-multiplier for a capable agent</strong> and a <strong>liability for a weak one</strong> when used unguarded. The summary tempts a weak model to trust it over the filesystem — fast, but it manufactures plausible hallucinations (wrong paths, wrong deployment facts).</p>
+    <div class="panel2">
+      <strong>Recommendation — KG-for-orientation, code-for-truth:</strong><br>
+      • Use the KG to <em>narrow</em> the search, but require code verification before asserting any file path, deployment fact, or root cause.<br>
+      • For weaker/cheaper models, make the KG tools return <em>node ids → real file paths the agent must open</em> (don’t let it free-narrate from digests), and prefer pairing the KG with a strong model for diagnosis.<br>
+      • Keep the grounding discipline already shipped (no invented telemetry) — and extend it: have KG answers cite the concrete <span class="mono">codeRef</span> so any claim is checkable.
+    </div>
+  </div>
+
+  <p class="foot">
+    Method: 10 questions, two agents (same model — Claude Haiku — both with Read/Grep/Glob/Bash on the repo); only the code+KG agent also receives the project’s knowledge-graph context. Speed = tool-call count; effort = subagent output tokens; accuracy graded blind by a separate strong judge against ground truth from the source. <strong>Caveats:</strong> wall-clock excluded (parallel contention); n=10 single run, so directional not definitive; the strong-model comparison used a different 6-question set, so cross-run numbers show <em>direction</em> of the KG effect, not a like-for-like delta.
+  </p>
+</div>
+</body>
+</html>

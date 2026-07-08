@@ -1,0 +1,20 @@
+{
+  "name": "@intellilabs/engine",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "test": "vitest run" },
+  "dependencies": {
+    "@intellilabs/core": "workspace:*",
+    "drizzle-orm": "^0.44.0",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@google-cloud/firestore": "^8.6.0",
+    "@testcontainers/postgresql": "^11.0.0",
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.11.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

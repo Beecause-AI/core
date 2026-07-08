@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Graph Effectiveness — Code-only vs Code+KG</title>
+<style>
+  :root{
+    --bg:#0e0f0c; --panel:#17180f; --panel2:#1e1f14; --edge:#2c2d20;
+    --fg:#ececdf; --muted:#a6a892; --faint:#73756099; --faint2:#777864;
+    --accent:#f6b73c; --a:#9a9ba1; --b:#36c28b; --warn:#e8920c; --crit:#ef4d56;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,Inter,Segoe UI,Roboto,sans-serif;padding:40px 20px}
+  .wrap{max-width:960px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:18px;margin:34px 0 12px;letter-spacing:-.2px}
+  .sub{color:var(--muted);margin:0 0 6px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}
+  .card{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:16px}
+  .card .k{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .card .v{font-size:30px;font-weight:700;margin-top:6px;letter-spacing:-.5px}
+  .card .d{color:var(--faint2);font-size:12.5px;margin-top:4px}
+  .good{color:var(--b)} .accent{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--edge);vertical-align:top}
+  th{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .q{color:var(--fg)}
+  .barwrap{display:flex;align-items:center;gap:8px}
+  .bar{height:9px;border-radius:5px;display:inline-block;min-width:2px}
+  .bar.a{background:var(--a)} .bar.b{background:var(--b)}
+  .legend{display:flex;gap:18px;color:var(--muted);font-size:13px;margin:10px 0 0}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;margin-right:6px;vertical-align:middle}
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:18px 20px}
+  .panel2{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:14px 16px;margin-top:10px}
+  ul{margin:8px 0 0;padding-left:20px} li{margin:4px 0}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--edge);color:var(--muted);background:var(--panel2)}
+  .win{color:var(--b);font-weight:600}
+  .foot{color:var(--faint2);font-size:12.5px;margin-top:28px;border-top:1px solid var(--edge);padding-top:14px}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Knowledge Graph effectiveness</h1>
+  <p class="sub"><strong>Code-only agent</strong> vs <strong>Code&nbsp;+&nbsp;Knowledge&nbsp;Graph agent</strong> — speed &amp; accuracy on the same exam.</p>
+  <p class="sub mono" style="font-size:12.5px;color:var(--faint2)">test org · project “aa” · graph of the intellilabs monorepo · 2026-06-13</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="k">Accuracy</div>
+      <div class="v"><span class="a" style="color:var(--a)">29</span> → <span class="good">30</span><span style="font-size:16px;color:var(--faint2)"> / 30</span></div>
+      <div class="d">code-only → code+KG (blind-judged vs real source)</div>
+    </div>
+    <div class="card">
+      <div class="k">Investigation steps</div>
+      <div class="v"><span style="color:var(--a)">41</span> → <span class="good">20</span></div>
+      <div class="d">total tool calls — <span class="good">−51%</span> with the KG</div>
+    </div>
+    <div class="card">
+      <div class="k">Verdict</div>
+      <div class="v accent" style="font-size:22px;line-height:1.2;margin-top:10px">Same answer,<br>~half the work</div>
+      <div class="d">KG’s value here is efficiency, not raw accuracy</div>
+    </div>
+  </div>
+
+  <h2>Per-question results</h2>
+  <p class="sub" style="font-size:13px">Bars show <strong>tool calls</strong> (code-exploration steps) — shorter is faster/cheaper. Accuracy is 0–5.</p>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:34%">Question</th>
+        <th>Code-only — steps</th>
+        <th>Code + KG — steps</th>
+        <th class="num">Acc&nbsp;A→B</th>
+        <th class="num">Δ steps</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- bar width: 12px per tool call -->
+      <tr><td class="q">1 · Main deployable services</td>
+        <td><div class="barwrap"><span class="bar a" style="width:84px"></span><span class="num">7</span></div></td>
+        <td><div class="barwrap"><span class="bar b" style="width:24px"></span><span class="num">2</span></div></td>
+        <td class="num">4 → 5</td><td class="num win">−5</td></tr>
+      <tr><td class="q">2 · Human-in-the-loop approval</td>
+        <td><div class="barwrap"><span class="bar a" style="width:12px"></span><span class="num">1</span></div></td>
+        <td><div class="barwrap"><span class="bar b" style="width:12px"></span><span class="num">1</span></div></td>
+        <td class="num">5 → 5</td><td class="num">0</td></tr>
+      <tr><td class="q">3 · DB schema-change blast radius</td>
+        <td><div class="barwrap"><span class="bar a" style="width:72px"></span><span class="num">6</span></div></td>
+        <td><div class="barwrap"><span class="bar b" style="width:24px"></span><span class="num">2</span></div></td>
+        <td class="num">5 → 5</td><td class="num win">−4</td></tr>
+      <tr><td class="q">4 · External integrations</td>
+        <td><div class="barwrap"><span class="bar a" style="width:72px"></span><span class="num">6</span></div></td>
+        <td><div class="barwrap"><span class="bar b" style="width:12px"></span><span class="num">1</span></div></td>
+        <td class="num">5 → 5</td><td class="num win">−5</td></tr>
+      <tr><td class="q">5 · Telemetry stack <span class="tag">trap</span></td>
+        <td><div class="barwrap"><span class="bar a" style="width:60px"></span><span class="num">5</span></div></td>
+        <td><div class="barwrap"><span class="bar b" style="width:48px"></span><span class="num">4</span></div></td>
+        <td class="num">5 → 5</td><td class="num win">−1</td></tr>
+      <tr><td class="q">6 · Where to add a model provider</td>
+        <td><div class="barwrap"><span class="bar a" style="width:192px"></span><span class="num">16</span></div></td>
+        <td><div class="barwrap"><span class="bar b" style="width:120px"></span><span class="num">10</span></div></td>
+        <td class="num">5 → 5</td><td class="num win">−6</td></tr>
+      <tr style="border-top:2px solid var(--edge)">
+        <td class="q"><strong>Total</strong></td>
+        <td><span class="num"><strong>41</strong> tool calls</span></td>
+        <td><span class="num good"><strong>20</strong> tool calls</span></td>
+        <td class="num"><strong>29 → 30</strong></td>
+        <td class="num win"><strong>−51%</strong></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="legend">
+    <span><span class="dot" style="background:var(--a)"></span>Code-only</span>
+    <span><span class="dot" style="background:var(--b)"></span>Code + Knowledge Graph</span>
+  </div>
+
+  <h2>What the numbers say</h2>
+  <div class="panel">
+    <ul>
+      <li><strong>Accuracy is at parity — both near-perfect (29 vs 30/30).</strong> With full code access, a strong model already answers these well; the KG didn’t raise the ceiling much. Its one edge: the code-only agent made a confident wrong claim (“graph-builder clones repos” — it actually reads via the GitHub API); the KG agent didn’t.</li>
+      <li><strong>The KG roughly halves the investigation effort (41 → 20 tool calls).</strong> It’s the clear win: the agent reaches the same correct answer with far less code-spelunking. Biggest savings on the <em>structural</em> questions the graph is built for — architecture (−5), blast-radius (−4), external deps (−5).</li>
+      <li><strong>The telemetry “trap” held.</strong> After the grounding fix, both agents correctly identified an <span class="mono">OpenTelemetry</span>-only stack and explicitly noted the Prometheus/Datadog/Sentry strings exist only inside the KG’s own detector code — no hallucination.</li>
+      <li><strong>Where the KG adds little:</strong> a question already pinned to one file (approval, Q2) is a tie — there’s nothing to “navigate.”</li>
+    </ul>
+  </div>
+
+  <h2>Interpretation</h2>
+  <div class="panel">
+    <p style="margin:0">For a <em>strong</em> model with <em>full</em> code access on a repo it can fully explore, the Knowledge Graph’s benefit shows up as <strong>efficiency and reliability</strong> rather than a big accuracy jump: ~half the exploration steps to the same answer, plus it steered the agent away from one fabricated detail. The advantage compounds exactly where you’d expect it to matter most in production:</p>
+    <div class="panel2">
+      • <strong>Larger / unfamiliar codebases</strong> — code-only exploration cost grows with repo size; the KG stays flat.<br>
+      • <strong>Weaker / cheaper models</strong> — less able to reconstruct architecture from raw files; the KG hands it to them.<br>
+      • <strong>Latency- or token-budget-sensitive</strong> RCA — fewer tool calls = faster, cheaper answers.<br>
+      • <strong>Cross-repo questions</strong> — the KG already stitches multiple repos into one system map.
+    </div>
+  </div>
+
+  <p class="foot">
+    Method: 6 questions, two agents (identical model, both with Read/Grep/Glob/Bash on the repo); the only difference is the code+KG agent also receives the project’s knowledge-graph context. Speed measured as tool-call count (contention-free); accuracy graded blind by a separate judge against ground truth derived from the source. <strong>Caveat:</strong> wall-clock time was inconclusive this run (parallel execution + model “thinking” outliers swamped the signal), so tool-call count is the reported speed metric. Sample size is small (n=6); treat as directional.
+  </p>
+</div>
+</body>
+</html>

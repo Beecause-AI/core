@@ -1,0 +1,16 @@
+{
+  "name": "@intellilabs/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.0",
+    "@types/node": "^22.15.0",
+    "typescript": "^5.8.0",
+    "jose": "^6.0.0",
+    "pg": "^8.16.0",
+    "@types/pg": "^8.11.0"
+  }
+}

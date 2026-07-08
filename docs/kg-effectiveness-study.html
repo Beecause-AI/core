@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knowledge Graph Effectiveness — full study (3 models)</title>
+<style>
+  :root{
+    --bg:#0e0f0c; --panel:#17180f; --panel2:#1e1f14; --edge:#2c2d20;
+    --fg:#ececdf; --muted:#a6a892; --faint:#777864;
+    --accent:#f6b73c; --a:#9a9ba1; --b:#36c28b; --warn:#e8920c; --crit:#ef4d56; --info:#4c9aef;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 -apple-system,Inter,Segoe UI,Roboto,sans-serif;padding:40px 20px}
+  .wrap{max-width:1060px;margin:0 auto}
+  h1{font-size:27px;margin:0 0 4px;letter-spacing:-.4px}
+  h2{font-size:18px;margin:36px 0 12px;letter-spacing:-.2px}
+  .sub{color:var(--muted);margin:0 0 6px}
+  .mono{font-family:ui-monospace,Menlo,monospace}
+  table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--edge);vertical-align:top}
+  th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .good{color:var(--b)} .bad{color:var(--crit)} .warnc{color:var(--warn)} .accent{color:var(--accent)} .mut{color:var(--faint)} .info{color:var(--info)}
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:18px 20px}
+  .panel2{background:var(--panel2);border:1px solid var(--edge);border-radius:10px;padding:14px 16px;margin-top:10px}
+  ul{margin:8px 0 0;padding-left:20px} li{margin:5px 0}
+  .rh{color:var(--fg);font-weight:600}
+  .big{font-size:18px;font-weight:700;letter-spacing:-.3px}
+  .inc{color:var(--accent);font-size:10px;border:1px solid var(--edge);border-radius:999px;padding:1px 6px;margin-left:6px}
+  .foot{color:var(--faint);font-size:12.5px;margin-top:28px;border-top:1px solid var(--edge);padding-top:14px}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--edge);color:var(--muted);background:var(--panel2);margin-right:6px}
+  .verdict{font-size:15px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Knowledge Graph effectiveness — the full study</h1>
+  <p class="sub"><strong>Code-only</strong> vs <strong>Code + KG</strong>, across <strong>three model tiers</strong> (Haiku → Sonnet → Opus). 10 questions (4 structural + <span class="accent">6 incident/RCA</span>), repo access for both conditions; only the KG differs. Tracked: accuracy (blind-judged vs source), tool calls, tokens.</p>
+  <p class="sub mono" style="font-size:12.5px;color:var(--faint)">test org · project “aa” · graph of the intellilabs monorepo · 2026-06-14</p>
+
+  <h2>The headline — it’s the <em>strongest</em> model that gets the KG’s value without the cost</h2>
+  <div class="panel">
+    <table>
+      <thead><tr>
+        <th>Model</th>
+        <th class="num">Accuracy &nbsp;(code-only → +KG)</th>
+        <th class="num">Tool calls &nbsp;(→ +KG)</th>
+        <th class="num">Tokens &nbsp;(→ +KG)</th>
+        <th>What the KG did</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="rh">Haiku <span class="mut">· weak</span></td>
+          <td class="num">46/50 → <span class="bad">42/50</span> <span class="mut">(−4)</span></td>
+          <td class="num">141 → 128 <span class="warnc">(−9%)</span></td>
+          <td class="num">276k → 261k <span class="warnc">(−5%)</span></td>
+          <td class="mut">Couldn’t exploit it — ground through code anyway; shortcuts hallucinated</td>
+        </tr>
+        <tr>
+          <td class="rh">Sonnet <span class="mut">· strong</span></td>
+          <td class="num">49/50 → <span class="bad big">39/50</span> <span class="mut">(−10)</span></td>
+          <td class="num">142 → <span class="good">14</span> <span class="good">(−90%)</span></td>
+          <td class="num">292k → <span class="good">139k</span> <span class="good">(−52%)</span></td>
+          <td class="bad">Over-trusted it — 8/10 zero-tool answers; fast but lost depth &amp; invented detail</td>
+        </tr>
+        <tr>
+          <td class="rh">Opus <span class="mut">· top</span></td>
+          <td class="num">50/50 → <span class="good big">48/50</span> <span class="good">(−2)</span></td>
+          <td class="num">83 → <span class="good">52</span> <span class="good">(−37%)</span></td>
+          <td class="num">231k → <span class="good">187k</span> <span class="good">(−19%)</span></td>
+          <td class="good">Used it right — oriented, then verified (~5 tools/Q); kept accuracy</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="margin:12px 0 0;color:var(--muted)">The relationship is <strong>non-monotonic</strong>. The weak model can’t use the graph; the mid model over-uses it (huge speed, real accuracy loss); only the top model converts it into efficiency <em>without</em> losing accuracy — because it has the judgment to <strong>verify selectively</strong> rather than trust the summary blindly.</p>
+  </div>
+
+  <h2>The lever is judgment-to-verify, not raw smarts</h2>
+  <div class="panel">
+    <table>
+      <thead><tr><th>Model</th><th class="num">KG verify rate (tools/Q)</th><th class="num">Zero-tool answers</th><th class="num">KG accuracy</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td class="rh">Haiku</td><td class="num">12.8</td><td class="num">2/10</td><td class="num bad">42/50 (−4)</td><td class="mut">verifies a lot but is a weaker analyst; over-trusts on 2 → hallucinated paths</td></tr>
+        <tr><td class="rh">Sonnet</td><td class="num bad">1.4</td><td class="num bad">8/10</td><td class="num bad">39/50 (−10)</td><td class="bad">under-verifies — lets the KG replace reading code → biggest loss</td></tr>
+        <tr><td class="rh">Opus</td><td class="num good">5.2</td><td class="num">2/10</td><td class="num good">48/50 (−2)</td><td class="good">orients on the KG, still opens the files → parity</td></tr>
+        <tr><td class="rh mut">Sonnet (earlier set, n=6)</td><td class="num">~3.3</td><td class="num">—</td><td class="num good">30/30 (0)</td><td class="mut">when it <em>did</em> verify, it also kept full accuracy</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:12px 0 0;color:var(--muted)">Accuracy tracks <strong>whether the agent still verifies in code</strong>. The danger is a capable-but-not-top model (Sonnet) becoming <em>confident enough to stop digging</em> — exactly when the KG’s plausible summary is most seductive. Opus keeps verifying; Sonnet doesn’t.</p>
+  </div>
+
+  <h2>Per-question — top model (Opus)</h2>
+  <table>
+    <thead><tr><th>Question</th><th class="num">A tools</th><th class="num">B tools</th><th class="num">A tok</th><th class="num">B tok</th><th class="num">Acc A→B</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Deployable services</td><td class="num">4</td><td class="num good">0</td><td class="num">16k</td><td class="num good">12k</td><td class="num">5 → 5</td></tr>
+      <tr><td>2 · Schema blast radius</td><td class="num">5</td><td class="num good">2</td><td class="num">17k</td><td class="num good">14k</td><td class="num">5 → 5</td></tr>
+      <tr><td>3 · Approval gate</td><td class="num">6</td><td class="num">5</td><td class="num">20k</td><td class="num">15k</td><td class="num">5 → 5</td></tr>
+      <tr><td>4 · Add model provider</td><td class="num">10</td><td class="num good">8</td><td class="num">21k</td><td class="num">23k</td><td class="num">5 → 5</td></tr>
+      <tr><td>5 · Assistant fails <span class="inc">incident</span></td><td class="num">10</td><td class="num good">5</td><td class="num">29k</td><td class="num good">20k</td><td class="num bad">5 → 4</td></tr>
+      <tr><td>6 · Approvals not in Slack <span class="inc">incident</span></td><td class="num">10</td><td class="num">9</td><td class="num">27k</td><td class="num">25k</td><td class="num">5 → 5</td></tr>
+      <tr><td>7 · KG build stuck <span class="inc">incident</span></td><td class="num">12</td><td class="num good">5</td><td class="num">31k</td><td class="num good">25k</td><td class="num">5 → 5</td></tr>
+      <tr><td>8 · Latency / cost <span class="inc">incident</span></td><td class="num">10</td><td class="num good">0</td><td class="num">26k</td><td class="num good">11k</td><td class="num bad">5 → 4</td></tr>
+      <tr><td>9 · Super login broken <span class="inc">incident</span></td><td class="num">6</td><td class="num">9</td><td class="num">21k</td><td class="num">20k</td><td class="num good">5 → 5 ✓</td></tr>
+      <tr><td>10 · GitHub sync broken <span class="inc">incident</span></td><td class="num">10</td><td class="num">9</td><td class="num">24k</td><td class="num">22k</td><td class="num">5 → 5</td></tr>
+      <tr style="border-top:2px solid var(--edge)"><td><strong>Total</strong></td><td class="num"><strong>83</strong></td><td class="num good"><strong>52</strong></td><td class="num"><strong>231k</strong></td><td class="num good"><strong>187k</strong></td><td class="num"><strong>50 → 48</strong></td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="font-size:12.5px;margin-top:6px"><span class="tag">A</span>code-only &nbsp; <span class="tag">B</span>code + KG &nbsp;·&nbsp; Opus+KG matched code-only on the hardest questions — it independently found the <strong>authorized-domains</strong> root cause (Q9 ✓) and the full provider-file list (Q4), the exact places Sonnet+KG degraded into vagueness.</p>
+
+  <h2>Where Opus+KG lost its 2 points</h2>
+  <div class="panel">
+    <ul>
+      <li><strong>Q5 — one deep root cause missed.</strong> Code-only Opus surfaced a subtle real cause — <span class="mono">pg</span> connection-pool exhaustion from <span class="mono">cancel.ts</span> holding a dedicated <span class="mono">LISTEN</span> connection per turn. Opus+KG found the breaker / max-iterations / credential causes but stopped before that one. The KG oriented it onto the well-lit path and it dug one level less.</li>
+      <li><strong>Q8 — a hedge instead of a verify.</strong> It answered latency/cost from the KG with 0 tools and self-flagged “did not re-verify exact paths/columns.” Correct, but it traded one verification for speed.</li>
+      <li><strong>Everywhere else it matched code-only</strong> — including the two questions that broke the weaker KG agents (Q9 authorized-domains, Q4 provider files).</li>
+    </ul>
+  </div>
+
+  <h2>Verdict &amp; recommendation</h2>
+  <div class="panel verdict">
+    <p style="margin:0">The Knowledge Graph is a <strong>real accelerator</strong> — but how much it helps, and whether it costs accuracy, depends on the model’s judgment:</p>
+    <div class="panel2">
+      • <span class="good"><strong>Top model (Opus): the sweet spot.</strong></span> −37% tools / −19% tokens at near-identical accuracy (50→48). It orients on the KG and still verifies the hard claims, reproducing the deep root causes.<br>
+      • <span class="warnc"><strong>Mid model (Sonnet): fast but risky.</strong></span> −90% tools but −10 accuracy — it lets the KG <em>replace</em> reading code and invents/oversimplifies.<br>
+      • <span class="bad"><strong>Weak model (Haiku): little upside.</strong></span> −9% tools, −4 accuracy — can’t convert the map into shortcuts and hallucinates when it tries.
+    </div>
+    <p style="margin:12px 0 0;color:var(--muted)"><strong>Recommendation:</strong> pair the KG with a <strong>top-tier model</strong> for diagnosis, and engineer the “orient-then-verify” discipline into the tools so even mid models get Opus-like behaviour: KG results should return concrete <span class="mono">codeRef</span>s (file:line) and the agent must open them before asserting a path, mechanism, or root cause — never accept a 0-tool answer on an RCA question. That keeps the −37% efficiency while closing the accuracy gap. (The KG still can’t surface facts that live outside code — e.g. the Firebase authorized-domains misconfig was only inferable because the rebrand context was in scope — which is what the deferred telemetry/observability connectors would add.)</p>
+  </div>
+
+  <p class="foot">
+    Method: 10 questions × 2 conditions × 3 models (Claude Haiku / Sonnet / Opus), all with Read/Grep/Glob/Bash on the repo; the +KG condition also receives the project knowledge-graph context. Speed = tool-call count; effort = subagent output tokens; accuracy graded blind by an Opus judge against ground truth from the source. <strong>Caveats:</strong> wall-clock excluded (parallel contention); one run per cell, n=10 (the n=6 Sonnet row used an earlier question set), so figures are directional, not definitive. Per-run detail: <span class="mono">kg-effectiveness-report.html</span> (n=6) and <span class="mono">kg-effectiveness-weak-model-report.html</span> (Haiku).
+  </p>
+</div>
+</body>
+</html>

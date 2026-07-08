@@ -1,0 +1,16 @@
+{
+  "name": "intellilabs",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "pnpm -r --if-present test",
+    "lint:boundaries": "depcruise packages/core packages/engine --config .dependency-cruiser.cjs"
+  },
+  "packageManager": "pnpm@10.12.1",
+  "devDependencies": {
+    "dependency-cruiser": "^16.10.4"
+  }
+}

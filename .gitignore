@@ -1,0 +1,14 @@
+node_modules/
+.next/
+out/
+dist/
+.env
+.pulumi/
+.firebase/
+*.tsbuildinfo
+build/
+coverage/
+.env*.local
+.pulumi-passphrase
+e2e/test-results/
+.superpowers/

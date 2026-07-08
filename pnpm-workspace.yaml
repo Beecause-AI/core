@@ -1,0 +1,6 @@
+packages:
+  - apps/*
+  - packages/*
+  - infra
+  - infra/cloudflare
+  - e2e

@@ -1,0 +1,24 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "1.0.0",
+  "id": "__BOT_ID__",
+  "developer": {
+    "name": "Beecause",
+    "websiteUrl": "https://beecause.ai",
+    "privacyUrl": "https://beecause.ai/privacy",
+    "termsOfUseUrl": "https://beecause.ai/terms"
+  },
+  "name": { "short": "Beecause", "full": "Beecause incident copilot" },
+  "description": {
+    "short": "RCA copilot in your channels",
+    "full": "@-mention Beecause in a channel to run root-cause analysis with your incident response team."
+  },
+  "icons": { "color": "color.png", "outline": "outline.png" },
+  "accentColor": "#E8A317",
+  "bots": [
+    { "botId": "__BOT_ID__", "scopes": ["team", "groupchat"], "supportsFiles": false, "isNotificationOnly": false }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "validDomains": ["beecause.ai"]
+}
