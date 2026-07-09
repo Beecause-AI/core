@@ -1,8 +1,11 @@
 # Beecause
 
+[![CI](https://github.com/Beecause-AI/core/actions/workflows/ci.yml/badge.svg)](https://github.com/Beecause-AI/core/actions/workflows/ci.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 > Root cause analysis for engineering teams — easy, fast, and interactive.
 
-Beecause is the open-core of [beecause.ai](https://beecause.ai), a managed SaaS that brings AI-powered root-cause analysis directly into Slack. This repository contains the open-source server, web app, and analysis engine under the Apache 2.0 license.
+Beecause is the open-core of [beecause.ai](https://beecause.ai), a managed SaaS that brings AI-powered root-cause analysis directly into Slack. This repository contains the self-hostable open-source server, web app, and analysis engine. Connect your observability stack, trigger an incident in Slack, and get cited AI-generated root-cause analysis — no Google Cloud required.
 
 ## Architecture
 
@@ -54,4 +57,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-Apache License 2.0 — see [LICENSE](LICENSE).
+Apache License 2.0 — see [LICENSE](LICENSE). Copyright the Beecause contributors.
