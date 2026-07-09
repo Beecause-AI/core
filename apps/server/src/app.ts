@@ -174,6 +174,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   const { logoutRoutes } = await import('./auth/logout.js');
   await app.register(logoutRoutes);
+  const { authMethodsRoutes } = await import('./auth/methods.js');
+  await app.register(authMethodsRoutes);
   // AuthProvider: local (scrypt) or GCP Identity Platform, built from config unless a seam is injected.
   let authProvider: AuthProvider | undefined = deps.authProvider;
   if (!authProvider) {

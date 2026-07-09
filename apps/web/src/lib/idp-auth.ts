@@ -53,3 +53,15 @@ export async function passwordSignIn(email: string, password: string): Promise<v
   if (res.status === 401) throw new Error('invalid');
   if (!res.ok) throw new Error('signin failed');
 }
+
+/** Email/password registration via the OSS server (POST /auth/register). */
+export async function registerLocal(email: string, password: string, name?: string): Promise<void> {
+  const res = await fetch('/auth/register', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email, password, ...(name ? { name } : {}) }),
+  });
+  if (res.status === 403) throw new Error('disabled');
+  if (res.status === 409) throw new Error('conflict');
+  if (!res.ok) throw new Error('register failed');
+}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { providerFor, passwordSignIn } from '../src/lib/idp-auth';
+import { providerFor, passwordSignIn, registerLocal } from '../src/lib/idp-auth';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -31,5 +31,34 @@ describe('passwordSignIn', () => {
   it('throws generic on other failures', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 500 }));
     await expect(passwordSignIn('a@b.co', 'pw')).rejects.toThrow();
+  });
+});
+
+describe('registerLocal', () => {
+  it('POSTs to /auth/register and resolves on 201', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 201 }));
+    await registerLocal('a@b.co', 'longenough', 'Alice');
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toBe('/auth/register');
+    expect(init!.method).toBe('POST');
+    expect(JSON.parse(init!.body as string)).toEqual({ email: 'a@b.co', password: 'longenough', name: 'Alice' });
+  });
+  it('omits name when not provided', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 201 }));
+    await registerLocal('a@b.co', 'longenough');
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect(JSON.parse(init!.body as string)).toEqual({ email: 'a@b.co', password: 'longenough' });
+  });
+  it('throws "disabled" on 403', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 403 }));
+    await expect(registerLocal('a@b.co', 'longenough')).rejects.toThrow('disabled');
+  });
+  it('throws "conflict" on 409', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 409 }));
+    await expect(registerLocal('a@b.co', 'longenough')).rejects.toThrow('conflict');
+  });
+  it('throws generic on other failures', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 500 }));
+    await expect(registerLocal('a@b.co', 'longenough')).rejects.toThrow();
   });
 });

@@ -7,9 +7,10 @@ import { Field, Input } from '../../components/ui/input';
 import { passwordSignIn, startSso, completeSsoRedirect } from '../../lib/idp-auth';
 
 type SsoInfo = { ssoEnabled: boolean; tenantId: string | null; providerId: string | null };
+type AuthMethods = { password: boolean; oidc: boolean; sso: boolean; signup: boolean };
 
 export default function SignInPage() {
-  const [info, setInfo] = useState<SsoInfo | null>(null);
+  const [info, setInfo] = useState<(SsoInfo & AuthMethods) | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -25,16 +26,24 @@ export default function SignInPage() {
     let active = true;
     (async () => {
       try {
-        const res = await fetch('/auth/sso-info');
-        const i: SsoInfo = res.ok ? await res.json() : { ssoEnabled: false, tenantId: null, providerId: null };
+        const [methodsRes, ssoRes] = await Promise.all([
+          fetch('/auth/methods'),
+          fetch('/auth/sso-info'),
+        ]);
+        const methods: AuthMethods = methodsRes.ok
+          ? await methodsRes.json()
+          : { password: true, oidc: false, sso: false, signup: false };
+        const ssoInfo: SsoInfo = ssoRes.ok
+          ? await ssoRes.json()
+          : { ssoEnabled: false, tenantId: null, providerId: null };
         if (!active) return;
-        setInfo(i);
-        if (i.ssoEnabled && i.tenantId) {
-          const done = await completeSsoRedirect(i.tenantId);
+        setInfo({ ...methods, ...ssoInfo });
+        if (methods.sso && ssoInfo.ssoEnabled && ssoInfo.tenantId) {
+          const done = await completeSsoRedirect(ssoInfo.tenantId);
           if (done) { window.location.href = '/'; return; }
         }
       } catch {
-        if (active) setInfo({ ssoEnabled: false, tenantId: null, providerId: null });
+        if (active) setInfo({ password: true, oidc: false, sso: false, signup: false, ssoEnabled: false, tenantId: null, providerId: null });
       }
     })();
     return () => { active = false; };
@@ -63,6 +72,8 @@ export default function SignInPage() {
     }
   }
 
+  const hasSecondary = info ? (info.oidc || (info.sso && info.ssoEnabled)) : false;
+
   return (
     <div className="min-h-screen bg-canvas">
       <main className="mx-auto flex min-h-[80vh] max-w-md flex-col justify-center px-6 py-16">
@@ -75,32 +86,48 @@ export default function SignInPage() {
           <p className="text-center text-sm text-fg-muted">Loading…</p>
         ) : (
           <>
-            <form onSubmit={onPassword} className="flex flex-col gap-4">
-              <Field label="Email">
-                <Input type="email" required autoFocus autoComplete="username"
-                  value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
-              </Field>
-              <Field label="Password">
-                <Input type="password" required autoComplete="current-password"
-                  value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" />
-              </Field>
-              <Button type="submit" disabled={busy} className="w-full justify-center">
-                {busy ? 'Signing in…' : 'Sign in'}
-              </Button>
-            </form>
-
-            {info.ssoEnabled && (
-              <>
-                <div className="my-5 flex items-center gap-3 text-xs text-fg-faint">
-                  <span className="h-px flex-1 bg-edge" /> OR <span className="h-px flex-1 bg-edge" />
-                </div>
-                <Button type="button" variant="secondary" disabled={busy} onClick={onSso} className="w-full justify-center">
-                  Single sign-on
+            {info.password && (
+              <form onSubmit={onPassword} className="flex flex-col gap-4">
+                <Field label="Email">
+                  <Input type="email" required autoFocus autoComplete="username"
+                    value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" />
+                </Field>
+                <Field label="Password">
+                  <Input type="password" required autoComplete="current-password"
+                    value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Your password" />
+                </Field>
+                <Button type="submit" disabled={busy} className="w-full justify-center">
+                  {busy ? 'Signing in…' : 'Sign in'}
                 </Button>
-              </>
+              </form>
+            )}
+
+            {info.password && hasSecondary && (
+              <div className="my-5 flex items-center gap-3 text-xs text-fg-faint">
+                <span className="h-px flex-1 bg-edge" /> OR <span className="h-px flex-1 bg-edge" />
+              </div>
+            )}
+
+            {info.oidc && (
+              <Button type="button" variant="secondary" onClick={() => { window.location.href = '/auth/oidc/login'; }} className="w-full justify-center">
+                Sign in with OIDC
+              </Button>
+            )}
+
+            {info.sso && info.ssoEnabled && (
+              <Button type="button" variant="secondary" disabled={busy} onClick={onSso} className="w-full justify-center">
+                Single sign-on
+              </Button>
             )}
 
             {error && <p className="mt-4 text-center text-sm text-crit">{error}</p>}
+
+            {info.signup && (
+              <p className="mt-4 text-center text-sm text-fg-muted">
+                Don&apos;t have an account?{' '}
+                <a href="/signup" className="font-medium underline hover:text-fg">Sign up</a>
+              </p>
+            )}
           </>
         )}
       </main>
