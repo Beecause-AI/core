@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const Env = z.object({
-  GCP_PROJECT_ID: z.string(),
+  GCP_PROJECT_ID: z.string().default('local'),
   FIRESTORE_EMULATOR_HOST: z.string().optional(),
   // Vertex Vector Search (memories + KG embeddings). Optional so emulator/local boots
   // without a deployed index; vector-search calls are inert until these are set.

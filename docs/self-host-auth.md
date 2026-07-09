@@ -1,8 +1,59 @@
 # Self-Host Auth
 
-Beecause supports three authentication backends (`AUTH_BACKEND`). This document covers
-**`AUTH_BACKEND=oidc`** — delegating authentication to an external OpenID Connect provider.
-For the local password backend see `docs/self-host-store.md` (hardening section).
+Beecause supports three authentication backends (`AUTH_BACKEND`):
+
+- `local` — scrypt password hashing stored in Postgres (OSS default, no external IdP needed)
+- `oidc` — delegates to an external OpenID Connect provider (Authorization Code + PKCE)
+- `gcp` — GCP Identity Platform (managed SaaS only)
+
+## Local auth (single-tenant) quick start
+
+This is the fastest path for a self-hosted deployment. No external identity provider required.
+
+```bash
+# 1. Copy the example env and edit it
+cp .env.example .env
+```
+
+Set at minimum in `.env`:
+
+```
+AUTH_BACKEND=local
+TENANT_MODE=single
+SINGLE_TENANT_SLUG=default
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=changeme123
+SESSION_SECRET=<random 32+ character string>
+STORE_BACKEND=postgres
+DATABASE_URL=postgres://beecause:beecause@localhost:5432/beecause
+VECTOR_BACKEND=pgvector
+BASE_URL=http://localhost:8080
+```
+
+```bash
+# 2. Start Postgres (with pgvector)
+docker compose -f docker-compose.oss.yml up -d
+
+# 3. Start the server
+make dev-server   # or: cd apps/server && pnpm dev
+```
+
+```bash
+# 4. Verify the server is up
+curl http://localhost:8080/api/healthz   # → 200 {"status":"ok"}
+```
+
+Navigate to `http://localhost:3000/signin` (or `http://localhost:8080/signin` if not running the web app separately) to log in with the `ADMIN_EMAIL` / `ADMIN_PASSWORD` you set.
+
+To allow additional users to self-register (instead of admin-invite only), add:
+
+```
+LOCAL_SIGNUP_ENABLED=true
+```
+
+This opens `POST /auth/register` for unauthenticated new-user creation. Leave it unset in production unless you intend an open registration flow.
+
+---
 
 ## OIDC (Authorization Code + PKCE)
 

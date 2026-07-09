@@ -18,26 +18,32 @@ git clone https://github.com/Beecause-AI/core.git
 cd core
 pnpm install
 
-# 2. Start infrastructure (Postgres + emulators)
-docker compose -f docker-compose.oss.yml up -d
-
-# 3. Configure
+# 2. Configure
 cp .env.example .env
 # Edit .env and set at minimum:
 #   STORE_BACKEND=postgres
-#   DATABASE_URL=postgres://user:pass@localhost:5432/beecause
+#   DATABASE_URL=postgres://beecause:beecause@localhost:5432/beecause
 #   AUTH_BACKEND=local
 #   TENANT_MODE=single
+#   SINGLE_TENANT_SLUG=default
 #   ADMIN_EMAIL=admin@example.com
 #   ADMIN_PASSWORD=changeme
 #   VECTOR_BACKEND=pgvector
 #   SESSION_SECRET=<random 32+ chars>
 #   BASE_URL=http://localhost:8080
 #   ANTHROPIC_API_KEY=<your key>   # or set a Vertex / OpenAI key
+# Note: GCP_PROJECT_ID is not required for Postgres + local auth.
+
+# 3. Start infrastructure (Postgres with pgvector)
+docker compose -f docker-compose.oss.yml up -d
 
 # 4. Run
 make dev-server   # terminal 1 — API on :8080
 make dev-web      # terminal 2 — UI on :3000
+
+# 5. Verify the server is up
+curl http://localhost:8080/api/healthz   # → 200 {"status":"ok"}
+# Then log in at http://localhost:3000/signin
 ```
 
 See [docs/self-host-store.md](docs/self-host-store.md) for storage configuration and [docs/self-host-auth.md](docs/self-host-auth.md) for auth backend options.
