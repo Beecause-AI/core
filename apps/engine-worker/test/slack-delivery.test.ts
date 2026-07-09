@@ -260,7 +260,7 @@ describe('makeSlackOnEvent', () => {
     const offer = await createCopilotIssueOffer(db, {
       orgId, projectId, conversationId,
       slackChannelId: 'C1', slackThreadTs: '1.1',
-      repo: 'acme/api', candidateRepos: [], title: 'T', body: 'B', summary: 'Raise a fix?',
+      repo: 'acme/api', candidateRepos: [], title: 'T', body: 'B', summary: 'Raise a fix?', provider: 'github' as const,
     });
 
     const turn = {
